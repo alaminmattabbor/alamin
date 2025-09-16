@@ -1,177 +1,83 @@
-const navLinks = document.querySelectorAll('header nav a');
-const logoLink = document.querySelector('.logo');
-const sections = document.querySelectorAll('section');
-const menuIcon = document.querySelector('#menu-icon');
-const navbar = document.querySelector('header nav');
 
-menuIcon.addEventListener('click', () => {
-    menuIcon.classList.toggle('bx-x');
-    navbar.classList.toggle('active');
-});
+const form = document.getElementById('student-form');
+const nameInput = document.getElementById('student-name');
+const idInput = document.getElementById('student-id');
+const ageInput = document.getElementById('student-age');
+const classInput = document.getElementById('student-class');
+const studentTableBody = document.querySelector('#student-list tbody');
 
-const activePage = () => {
-    const header = document.querySelector('header');
-    const barsBox = document.querySelector('.bars-box');
 
-    header.classList.remove('active');
-    setTimeout(() => {
-        header.classList.add('active');
-    }, 1100);
-
-    navLinks.forEach(link => {
-        link.classList.remove('active');
-    });
-
-    barsBox.classList.remove('active');
-    setTimeout(() => {
-        barsBox.classList.add('active');
-    }, 1100);
-
-    sections.forEach(section => {
-        section.classList.remove('active');
-    });
-
-    menuIcon.classList.remove('bx-x');
-    navbar.classList.remove('active');
+function loadStudents() {
+    const students = JSON.parse(localStorage.getItem('students')) || [];
+    students.forach(student => addStudentToTable(student));
 }
 
-navLinks.forEach((link, idx) => {
-    link.addEventListener('click', () => {
-        if (!link.classList.contains('active')) {
-            activePage();
-
-            link.classList.add('active');
-
-            setTimeout(() => {
-                sections[idx].classList.add('active');
-            }, 1100);
-        }
-    });
-});
-
-logoLink.addEventListener('click', () => {
-    if (!navLinks[0].classList.contains('active')) {
-        activePage();
-
-        navLinks[0].classList.add('active');
-
-        setTimeout(() => {
-            sections[0].classList.add('active');
-        }, 1100);
-    }
-});
-
-const resumeBtns = document.querySelectorAll('.resume-btn');
-
-resumeBtns.forEach((btn, idx) => { 
-    btn.addEventListener('click', () => {
-        const resumeDetails = document.querySelectorAll('.resume-detail');
-
-        resumeBtns.forEach(btn => {
-            btn.classList.remove('active');
-        });
-        btn.classList.add('active');
-
-        resumeDetails.forEach(detail => {
-            detail.classList.remove('active');
-        });
-        resumeDetails[idx].classList.add('active');
-    });
-});
-
-const arrowRight = document.querySelector('.portfolio-box .navigation .arrow-right');
-const arrowLeft = document.querySelector('.portfolio-box .navigation .arrow-left');
-
-let index = 0;
-
-const activePortfolio = () => {
-    const imgSlide = document.querySelector('.portfolio-carousel .img-slide');
-    const portfolioDetails = document.querySelectorAll('.portfolio-detail')
-
-    imgSlide.style.transform = `translateX(calc(${index * -100}% - ${index * 2}rem))`;
-
-    portfolioDetails.forEach(detail => {
-        detail.classList.remove('active');
-    });
-    portfolioDetails[index].classList.add('active');
+function saveStudents(students) {
+    localStorage.setItem('students', JSON.stringify(students));
 }
 
-arrowRight.addEventListener('click', () => {
-    if (index < 4) {
-        index++;
-        arrowLeft.classList.remove('disabled');
-    }
-    else {
-        index = 5;
-        arrowRight.classList.add('disabled');
-    }
 
-    activePortfolio();
-});
+function addStudentToTable(student) {
+    const row = document.createElement('tr');
+    row.dataset.id = student.id; 
+    row.innerHTML = `
+        <td>${student.id}</td>
+        <td>${student.name}</td>
+        <td>${student.age}</td>
+        <td>${student.class}</td>
+        <td><button class="remove-btn">সরিয়ে ফেলুন</button></td>
+    `;
+    studentTableBody.appendChild(row);
+}
 
-arrowLeft.addEventListener('click', () => {
-    if (index > 1) {
-        index--;
-        arrowRight.classList.remove('disabled');
-    }
-    else {
-        index = 0;
-        arrowLeft.classList.add('disabled');
-    }
 
-    activePortfolio();
-});
-
-// Contact Form Submission
-const form = document.querySelector('form');
-const alertSuccess = document.querySelector('.alert.success');
-const alertError = document.querySelector('.alert.error');
-
-form.addEventListener('submit', async (e) => {
-  e.preventDefault(); // Prevent default form submission
-
-  // Show loading state
-  const submitBtn = form.querySelector('button[type="submit"]');
-  submitBtn.disabled = true;
-  submitBtn.textContent = 'Sending...';
-
-  try {
-    // Get form data
-    const formData = new FormData(form);
-
-    // Send form data to Formspree
-    const response = await fetch(form.action, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-
-    // Handle response
-    if (response.ok) {
-      // Show success message
-      alertSuccess.style.display = 'block';
-      form.reset(); // Clear form fields
-      
-      // Hide success message after 5 seconds
-      setTimeout(() => {
-        alertSuccess.style.display = 'none';
-      }, 5000);
-    } else {
-      throw new Error('Form submission failed');
-    }
-  } catch (error) {
-    // Show error message
-    alertError.style.display = 'block';
+function removeStudent(id) {
+    let students = JSON.parse(localStorage.getItem('students')) || [];
+   
+    students = students.filter(student => student.id !== id);
+   
+    saveStudents(students);
     
-    // Hide error message after 5 seconds
-    setTimeout(() => {
-      alertError.style.display = 'none';
-    }, 5000);
-  } finally {
-    // Reset button state
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Send Message';
-  }
+    const rowToRemove = document.querySelector(`tr[data-id="${id}"]`);
+    if (rowToRemove) {
+        rowToRemove.remove();
+    }
+}
+
+form.addEventListener('submit', (e) => {
+    e.preventDefault(); 
+
+    const newStudent = {
+        name: nameInput.value,
+        id: idInput.value,
+        age: ageInput.value,
+        class: classInput.value
+    };
+
+    const students = JSON.parse(localStorage.getItem('students')) || [];
+    const isDuplicate = students.some(student => student.id === newStudent.id);
+    if (isDuplicate) {
+        alert('এই আইডি দিয়ে একজন শিক্ষার্থী ইতিমধ্যে যুক্ত আছে।');
+        return;
+    }
+
+    students.push(newStudent);
+    saveStudents(students);
+    addStudentToTable(newStudent);
+
+    form.reset();
 });
+
+
+studentTableBody.addEventListener('click', (e) => {
+    
+    if (e.target.classList.contains('remove-btn')) {
+       
+        const row = e.target.closest('tr');
+        const studentId = row.dataset.id;
+        
+        removeStudent(studentId);
+    }
+});
+
+document.addEventListener('DOMContentLoaded', loadStudents);
